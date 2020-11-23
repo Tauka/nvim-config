@@ -1,7 +1,5 @@
 call plug#begin('~/.vim/plugged')
   Plug 'HerringtonDarkholme/yats.vim'
-  Plug 'mhartington/nvim-typescript', {'do': './install.sh'}
-  " For async completion:
   Plug 'Shougo/denite.nvim', { 'do': ':UpdateRemotePlugins' }
   Plug 'preservim/nerdtree'
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
@@ -16,6 +14,7 @@ call plug#begin('~/.vim/plugged')
 
   " Git
   Plug 'airblade/vim-gitgutter'
+  Plug 'zivyangll/git-blame.vim'
 call plug#end()
 
 set number
@@ -268,3 +267,6 @@ augroup end
 " === NERDTree === "
 nmap <C-n> :NERDTreeToggle<CR>
 nmap <leader>f :NERDTreeFind<CR>
+
+" === Git blame === "
+nnoremap <Leader>s :<C-u>call gitblame#echo()<CR>
