@@ -1,7 +1,9 @@
 call plug#begin('~/.vim/plugged')
   Plug 'HerringtonDarkholme/yats.vim'
   Plug 'Shougo/denite.nvim', { 'do': ':UpdateRemotePlugins' }
-  Plug 'preservim/nerdtree'
+  Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
+  Plug 'kristijanhusak/defx-git'
+  Plug 'kristijanhusak/defx-icons'
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'preservim/nerdcommenter'
 
@@ -13,7 +15,6 @@ call plug#begin('~/.vim/plugged')
   Plug 'bling/vim-bufferline'
 
   " Git
-  Plug 'airblade/vim-gitgutter'
   Plug 'zivyangll/git-blame.vim'
 call plug#end()
 
@@ -264,9 +265,130 @@ augroup Smartf
   autocmd User SmartfLeave :hi Conceal ctermfg=239 guifg=#504945
 augroup end
 
-" === NERDTree === "
-nmap <C-n> :NERDTreeToggle<CR>
-nmap <leader>f :NERDTreeFind<CR>
+" === defx === "
+let g:defx_git#indicators = {
+      \ 'Modified': '🔵',
+      \ 'Staged': '➕',
+      \ 'Untracked':'❗',
+      \ 'Renamed': '🔤',
+      \ 'Unmerged': '🔀',
+      \ 'Ignored': '⛔',
+      \ 'Deleted': '❌',
+      \ 'Unknown': '❓'
+      \ }
+call defx#custom#option('_', {
+      \ 'columns': 'git:indent:icons:filename:type',
+      \ 'winwidth': 30,
+      \ 'split': 'vertical',
+      \ 'direction': 'topleft',
+      \ 'show_ignored_files': 0,
+      \ 'ignored_files': '.*,*.pyc,*.pyd,*~,*.swo,*.swp,__pycache__,',
+      \ 'root_marker': ':',
+      \ })
+
+call defx#custom#column('git', 'indicators', g:defx_git#indicators)
+call defx#custom#column('git', 'max_indicator_width', 2)
+
+call defx#custom#column('filename', {
+      \ 'min_width': 5,
+      \ 'max_width': 25,
+      \ 'root_marker_highlight': 'Ignore',
+      \ })
+
+call defx#custom#column('time', {
+      \ 'format': '%Y %b %e %H:%M:%S',
+      \ })
+
+" let g:vimfiler_as_default_explorer = 1
+
+function! s:defx_toggle_tree_or_open_file() abort
+  if defx#is_directory()
+    return defx#do_action('open_or_close_tree')
+  else
+    return defx#do_action('drop')
+  endif
+endfunction
+
+function! s:defx_cd_or_open_file() abort
+  if defx#is_directory()
+    return defx#do_action('open_directory')
+  else
+    return defx#do_action('multi', ['drop', 'quit'])
+  endif
+endfunction
+
+function! s:defx_keymaps() abort
+  " double click/Enter/l to open file
+  nnoremap <silent><buffer><expr> <2-LeftMouse> <sid>defx_toggle_tree_or_open_file()
+  "nnoremap <silent><buffer><expr> <CR> <sid>defx_toggle_tree_or_open_file()
+  nnoremap <silent><buffer><expr> ;    <sid>defx_cd_or_open_file()
+
+  nnoremap <silent><buffer><expr> q     defx#do_action('quit')
+  nnoremap <silent><buffer><expr> .     defx#do_action('toggle_ignored_files')
+  nnoremap <silent><buffer><expr> yy    defx#do_action('yank_path')
+  nnoremap <silent><buffer><expr> ~     defx#do_action('cd')
+  nnoremap <silent><buffer><expr><nowait> \  defx#do_action('cd', getcwd())
+  nnoremap <silent><buffer><expr> l     defx#do_action('cd', ['..'])
+  nnoremap <silent><buffer><expr> v defx#do_action('multi', [['drop', 'vsplit'], 'quit'])
+
+  nnoremap <silent><buffer><expr><nowait> s defx#do_action('toggle_select') . 'j'
+  nnoremap <silent><buffer><expr> *      defx#do_action('toggle_select_all')
+  nnoremap <silent><buffer><expr> <C-c>  defx#do_action('clear_select_all')
+  nnoremap <silent><buffer><expr> <C-r>  defx#do_action('redraw')
+  nnoremap <silent><buffer><expr> <C-g>  defx#do_action('print')
+
+  nnoremap <silent><buffer><expr> K     defx#do_action('new_directory')
+  nnoremap <silent><buffer><expr> N     defx#do_action('new_multiple_files')
+  nnoremap <silent><buffer><expr> dd    defx#do_action('remove')
+  nnoremap <silent><buffer><expr> r     defx#do_action('rename')
+  nnoremap <silent><buffer><expr> !     defx#do_action('execute_command')
+  nnoremap <silent><buffer><expr><nowait> c  defx#do_action('copy')
+  nnoremap <silent><buffer><expr><nowait> m  defx#do_action('move')
+  nnoremap <silent><buffer><expr><nowait> p  defx#do_action('paste')
+
+  nnoremap <silent><buffer><expr> S  defx#do_action('toggle_sort', 'time')
+endfunction
+
+function! s:browse() abort
+  let l:path = expand('<amatch>')
+  if l:path ==# '' || bufnr('%') != expand('<abuf>')
+    return
+  endif
+
+  if &filetype ==# 'defx' && line('$') != 1
+    return
+  endif
+
+  if !isdirectory(l:path)
+    return
+  endif
+
+  bd
+  exe ':Defx -split=no -columns=git:indent:icons:filename:type:size:time ' . l:path
+endfunction
+
+" Disable NetRW
+augroup FileExplorer
+    autocmd!
+augroup END
+
+augroup defx_group
+autocmd!
+" Auto close if it is the last
+autocmd BufEnter * if (&buftype ==# 'defx' || &buftype ==# 'nofile')
+    \ && (!has('vim_starting'))
+    \ && winbufnr(2) == -1 | quit! | endif
+" Move focus to the next window if current buffer is defx
+autocmd TabLeave * if &ft ==# 'defx' | wincmd w | endif
+" Keymap
+autocmd FileType defx do WinEnter | call s:defx_keymaps()
+autocmd BufWritePost * call defx#redraw()
+" Peplace NetRW with defx
+autocmd BufEnter * call s:browse()
+augroup END
+
+map <C-e> :Defx -toggle -columns=git:indent:icons:filename:type:size:time <CR>
+map <leader>f :Defx `escape(expand('%:p:h'), ' :')` -search=`expand('%:p')`<CR>
 
 " === Git blame === "
 nnoremap <Leader>s :<C-u>call gitblame#echo()<CR>
