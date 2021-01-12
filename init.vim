@@ -6,6 +6,7 @@ call plug#begin('~/.vim/plugged')
   Plug 'kristijanhusak/defx-icons'
   Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'preservim/nerdcommenter'
+  Plug 'evanleck/vim-svelte', {'branch': 'main'}
 
   " Theme
   Plug 'morhetz/gruvbox'
