@@ -176,7 +176,7 @@ nnoremap <leader>j :<C-u>DeniteCursorWord grep:.<CR>
 autocmd FileType denite-filter call s:denite_filter_my_settings()
 function! s:denite_filter_my_settings() abort
   imap <silent><buffer> <C-o>
-  \ <Plug>(denite_filter_quit)
+  \ <Plug>(denite_filter_update)
   inoremap <silent><buffer><expr> kj
   \ denite#do_map('quit')
   nnoremap <silent><buffer><expr> kj
@@ -235,7 +235,7 @@ nmap <silent> <leader>dd <Plug>(coc-definition)
 nmap <silent> <leader>dr <Plug>(coc-references)
 nmap <silent> <leader>dj <Plug>(coc-implementation)
 nnoremap <silent> <leader>ds :<C-u>CocList -I -N --top symbols<CR>
-nmap <leader>rn <Plug>(coc-refactor)
+nmap <leader>rn <Plug>(coc-rename)
 nnoremap <silent><nowait> <space>a  :<C-u>CocList diagnostics<cr>
 nmap <leader>rf :CocCommand workspace.renameCurrentFile<CR>
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
@@ -376,9 +376,9 @@ augroup END
 augroup defx_group
 autocmd!
 " Auto close if it is the last
-autocmd BufEnter * if (&buftype ==# 'defx' || &buftype ==# 'nofile')
-    \ && (!has('vim_starting'))
-    \ && winbufnr(2) == -1 | quit! | endif
+"autocmd BufEnter * if (&buftype ==# 'defx' || &buftype ==# 'nofile')
+    "\ && (!has('vim_starting'))
+    "\ && winbufnr(2) == -1 | quit! | endif
 " Move focus to the next window if current buffer is defx
 autocmd TabLeave * if &ft ==# 'defx' | wincmd w | endif
 " Keymap
