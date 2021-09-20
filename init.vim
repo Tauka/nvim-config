@@ -1,12 +1,18 @@
 call plug#begin('~/.vim/plugged')
-  Plug 'HerringtonDarkholme/yats.vim'
   Plug 'Shougo/denite.nvim', { 'do': ':UpdateRemotePlugins' }
   Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
   Plug 'kristijanhusak/defx-git'
   Plug 'kristijanhusak/defx-icons'
-  Plug 'neoclide/coc.nvim', {'branch': 'release'}
   Plug 'preservim/nerdcommenter'
   Plug 'evanleck/vim-svelte', {'branch': 'main'}
+  Plug 'neovim/nvim-lspconfig'
+  Plug 'neovim/nvim-lsp'
+  Plug 'phaazon/hop.nvim'
+  Plug 'hrsh7th/nvim-cmp'
+  Plug 'hrsh7th/cmp-buffer'
+  Plug 'hrsh7th/cmp-path'
+  Plug 'hrsh7th/cmp-nvim-lsp'
+  Plug 'hrsh7th/vim-vsnip'
 
   " Theme
   Plug 'morhetz/gruvbox'
@@ -18,6 +24,12 @@ call plug#begin('~/.vim/plugged')
   " Git
   Plug 'zivyangll/git-blame.vim'
 call plug#end()
+
+let g:gruvbox_italic='1'
+let g:gruvbox_contrast_light='hard'
+colorscheme gruvbox
+
+lua require("lsp-config");
 
 set number
 set lcs+=space:·
@@ -45,17 +57,6 @@ function! CheckUpdate(timer)
     call timer_start(1000,'CheckUpdate')
 endfunction
 
-function Styles()
-  colorscheme gruvbox
-  hi CocUnderline gui=undercurl term=undercurl
-  hi CocErrorHighlight ctermfg=red  guifg=#c4384b gui=undercurl term=undercurl
-  hi CocWarningHighlight ctermfg=yellow guifg=#c4ab39 gui=undercurl term=undercurl
-endfunction
-
-autocmd vimenter * call Styles()
-
-let g:gruvbox_italic='1'
-let g:gruvbox_contrast_light='hard'
 let mapleader = " "
 
 set hidden
@@ -231,40 +232,47 @@ endfunction
 "   <leader>dr    - Jump to references of current symbol
 "   <leader>dj    - Jump to implementation of current symbol
 "   <leader>ds    - Fuzzy search current project symbols
-nmap <silent> <leader>dd <Plug>(coc-definition)
-nmap <silent> <leader>dr <Plug>(coc-references)
-nmap <silent> <leader>dj <Plug>(coc-implementation)
-nnoremap <silent> <leader>ds :<C-u>CocList -I -N --top symbols<CR>
-nmap <leader>rn <Plug>(coc-rename)
-nnoremap <silent><nowait> <space>a  :<C-u>CocList diagnostics<cr>
-nmap <leader>rf :CocCommand workspace.renameCurrentFile<CR>
-nmap <silent> [g <Plug>(coc-diagnostic-prev)
-nmap <silent> ]g <Plug>(coc-diagnostic-next)
-" Use <C-j> for jump to next placeholder, it's default of coc.nvim
-let g:coc_snippet_next = '<c-o>'
+"nmap <silent> <leader>dd <Plug>(coc-definition)
+"nmap <silent> <leader>dr <Plug>(coc-references)
+"nmap <silent> <leader>dj <Plug>(coc-implementation)
+"nnoremap <silent> <leader>ds :<C-u>CocList -I -N --top symbols<CR>
+"nmap <leader>rn <Plug>(coc-rename)
+"nnoremap <silent><nowait> <space>a  :<C-u>CocList diagnostics<cr>
+"nmap <leader>rf :CocCommand workspace.renameCurrentFile<CR>
+"nmap <silent> [g <Plug>(coc-diagnostic-prev)
+"nmap <silent> ]g <Plug>(coc-diagnostic-next)
+"" Use <C-j> for jump to next placeholder, it's default of coc.nvim
+"let g:coc_snippet_next = '<c-o>'
 
-" Use <C-k> for jump to previous placeholder, it's default of coc.nvim
-let g:coc_snippet_prev = '<c-i>'
+"" Use <C-k> for jump to previous placeholder, it's default of coc.nvim
+"let g:coc_snippet_prev = '<c-i>'
 
-nnoremap <silent> K :call <SID>show_documentation()<CR>
+"nnoremap <silent> K :call <SID>show_documentation()<CR>
 
-function! s:show_documentation()
-  if (index(['vim','help'], &filetype) >= 0)
-    execute 'h '.expand('<cword>')
-  else
-    call CocAction('doHover')
-  endif
-endfunction
+"function! s:show_documentation()
+  ""if (index(['vim','help'], &filetype) >= 0)
+    ""execute 'h '.expand('<cword>')
+  ""else
+    ""call CocAction('doHover')
+  ""endif
+"endfunction
 
-nmap f <Plug>(coc-smartf-forward)
-nmap F <Plug>(coc-smartf-backward)
-nmap ' <Plug>(coc-smartf-repeat)
-nmap , <Plug>(coc-smartf-repeat-opposite)
+"nmap f <Plug>(coc-smartf-forward)
+"nmap F <Plug>(coc-smartf-backward)
+"nmap ' <Plug>(coc-smartf-repeat)
+"nmap , <Plug>(coc-smartf-repeat-opposite)
+"
+nmap <silent> f :HopChar1<CR>
+onoremap <silent> f v:HopChar1<CR>
+nmap <silent> <Leader>j :HopWord<CR>
+onoremap <silent> <Leader>j v:HopWord<CR>
+nmap <silent> <Leader>l :HopLine<CR>
+onoremap <silent> <Leader>l v:HopLine<CR>
 
-augroup Smartf
-  autocmd User SmartfEnter :hi Conceal ctermfg=200 guifg=#875fd7
-  autocmd User SmartfLeave :hi Conceal ctermfg=239 guifg=#504945
-augroup end
+"augroup Smartf
+  ""autocmd User SmartfEnter :hi Conceal ctermfg=200 guifg=#875fd7
+  ""autocmd User SmartfLeave :hi Conceal ctermfg=239 guifg=#504945
+"augroup end
 
 " === defx === "
 let g:defx_git#indicators = {
@@ -278,7 +286,7 @@ let g:defx_git#indicators = {
       \ 'Unknown': '❓'
       \ }
 call defx#custom#option('_', {
-      \ 'columns': 'git:indent:icons:filename:type',
+      \ 'columns': 'git:indent:icons:space:filename:type',
       \ 'winwidth': 30,
       \ 'split': 'vertical',
       \ 'direction': 'topleft',
@@ -319,9 +327,9 @@ function! s:defx_cd_or_open_file() abort
 endfunction
 
 function! s:defx_keymaps() abort
-  " double click/Enter/l to open file
+  "" double click/Enter/l to open file
   nnoremap <silent><buffer><expr> <2-LeftMouse> <sid>defx_toggle_tree_or_open_file()
-  "nnoremap <silent><buffer><expr> <CR> <sid>defx_toggle_tree_or_open_file()
+  ""nnoremap <silent><buffer><expr> <CR> <sid>defx_toggle_tree_or_open_file()
   nnoremap <silent><buffer><expr> ;    <sid>defx_cd_or_open_file()
 
   nnoremap <silent><buffer><expr> q     defx#do_action('quit')
@@ -377,8 +385,8 @@ augroup defx_group
 autocmd!
 " Auto close if it is the last
 "autocmd BufEnter * if (&buftype ==# 'defx' || &buftype ==# 'nofile')
-    "\ && (!has('vim_starting'))
-    "\ && winbufnr(2) == -1 | quit! | endif
+    ""\ && (!has('vim_starting'))
+    ""\ && winbufnr(2) == -1 | quit! | endif
 " Move focus to the next window if current buffer is defx
 autocmd TabLeave * if &ft ==# 'defx' | wincmd w | endif
 " Keymap
@@ -387,6 +395,12 @@ autocmd BufWritePost * call defx#redraw()
 " Peplace NetRW with defx
 autocmd BufEnter * call s:browse()
 augroup END
+
+autocmd BufWinEnter quickfix nnoremap <silent> <buffer>
+                \   q :cclose<cr>:lclose<cr>
+autocmd BufEnter * if (winnr('$') == 1 && &buftype ==# 'quickfix' ) |
+                \   bd|
+                \   q | endif
 
 map <C-e> :Defx -toggle -columns=git:indent:icons:filename:type:size:time <CR>
 map <leader>f :Defx `escape(expand('%:p:h'), ' :')` -search=`expand('%:p')`<CR>
