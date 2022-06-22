@@ -40,21 +40,93 @@ local on_attach = function(client, bufnr)
 
 end
 
-vim.o.updatetime = 150
-vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_line_diagnostics({focusable=false})]]
+-- setting up lsputils
+if vim.fn.has('nvim-0.5.1') == 1 then
+    vim.lsp.handlers['textDocument/codeAction'] = require'lsputil.codeAction'.code_action_handler
+    vim.lsp.handlers['textDocument/references'] = require'lsputil.locations'.references_handler
+    vim.lsp.handlers['textDocument/definition'] = require'lsputil.locations'.definition_handler
+    vim.lsp.handlers['textDocument/declaration'] = require'lsputil.locations'.declaration_handler
+    vim.lsp.handlers['textDocument/typeDefinition'] = require'lsputil.locations'.typeDefinition_handler
+    vim.lsp.handlers['textDocument/implementation'] = require'lsputil.locations'.implementation_handler
+    vim.lsp.handlers['textDocument/documentSymbol'] = require'lsputil.symbols'.document_handler
+    vim.lsp.handlers['workspace/symbol'] = require'lsputil.symbols'.workspace_handler
+else
+    local bufnr = vim.api.nvim_buf_get_number(0)
+
+    vim.lsp.handlers['textDocument/codeAction'] = function(_, _, actions)
+        require('lsputil.codeAction').code_action_handler(nil, actions, nil, nil, nil)
+    end
+
+    vim.lsp.handlers['textDocument/references'] = function(_, _, result)
+        require('lsputil.locations').references_handler(nil, result, { bufnr = bufnr }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/definition'] = function(_, method, result)
+        require('lsputil.locations').definition_handler(nil, result, { bufnr = bufnr, method = method }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/declaration'] = function(_, method, result)
+        require('lsputil.locations').declaration_handler(nil, result, { bufnr = bufnr, method = method }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/typeDefinition'] = function(_, method, result)
+        require('lsputil.locations').typeDefinition_handler(nil, result, { bufnr = bufnr, method = method }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/implementation'] = function(_, method, result)
+        require('lsputil.locations').implementation_handler(nil, result, { bufnr = bufnr, method = method }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/documentSymbol'] = function(_, _, result, _, bufn)
+        require('lsputil.symbols').document_handler(nil, result, { bufnr = bufn }, nil)
+    end
+
+    vim.lsp.handlers['textDocument/symbol'] = function(_, _, result, _, bufn)
+        require('lsputil.symbols').workspace_handler(nil, result, { bufnr = bufn }, nil)
+    end
+end
+
+-- put somewhere in your lsp config file
+vim.lsp.handlers["textDocument/hover"] =
+  function(_, method, result, _, _, config)
+    config = config or {}
+    local util = vim.lsp.util
+    config.focus_id = method
+    if not (result and result.contents) then
+      -- return { 'No information available' }
+    return
+    end
+    local markdown_lines = util.convert_input_to_markdown_lines(result.contents)
+    markdown_lines = util.trim_empty_lines(markdown_lines)
+    if vim.tbl_isempty(markdown_lines) then
+      -- return { 'No information available' }
+      return
+    end
+    local bufnr, winnr = util.open_floating_preview(markdown_lines, "markdown", config)
+    _G.lsp_hover_winnr = winnr
+    return bufnr, winnr
+  end
+
+-- use in autocommand
+_G.lsp_line_diagnostics = function()
+  local hovering = _G.lsp_hover_winnr and
+                       pcall(vim.api.nvim_win_get_config,
+                             _G.lsp_hover_winnr) or false
+  if not hovering then
+      vim.lsp.diagnostic.show_line_diagnostics()
+      -- reset to prevent unnecessary pcalls
+      if _G.lsp_hover_winnr then _G.lsp_hover_winnr = nil end
+  end
+end
+
+-- vim.o.updatetime = 150
+-- vim.cmd [[autocmd CursorHold,CursorHoldI * lua _G.lsp_line_diagnostics()]]
 
 nvim_lsp.tsserver.setup {
-  on_attach = function(client)
+  on_attach = function(client, bufnr)
     client.resolved_capabilities.document_formatting = false
-    on_attach(client)
+    on_attach(client, bufnr)
   end,
-  handlers = {
-    ["textDocument/publishDiagnostics"] = vim.lsp.with(
-       vim.lsp.diagnostic.on_publish_diagnostics, {
-         virtual_text = false
-       }
-     ),
-  }
 }
 
 local filetypes = {

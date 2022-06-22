@@ -13,6 +13,9 @@ call plug#begin('~/.vim/plugged')
   Plug 'hrsh7th/cmp-path'
   Plug 'hrsh7th/cmp-nvim-lsp'
   Plug 'hrsh7th/vim-vsnip'
+  Plug 'RishabhRD/popfix'
+  Plug 'RishabhRD/nvim-lsputils'
+  Plug 'github/copilot.vim'
 
   " Theme
   Plug 'morhetz/gruvbox'
@@ -63,6 +66,7 @@ set hidden
 set splitright
 
 " === Custom maps === "
+nnoremap p p`]
 nmap <silent> <leader>xx :noh<CR>
 nmap <leader>di di"i
 nmap <leader>du di'i
@@ -86,6 +90,8 @@ inoremap <C-d> <C-o>d0
 inoremap <C-j> <Down>
 inoremap <C-k> <Up>
 noremap <Space> <Nop>
+nmap <C-y> "+y
+vmap <C-y> "+y
 " === Denite setup ==="
 " Use ripgrep for searching current directory for files
 " By default, ripgrep will respect rules in .gitignore
@@ -263,6 +269,7 @@ endfunction
 "nmap , <Plug>(coc-smartf-repeat-opposite)
 "
 nmap <silent> f :HopChar1<CR>
+vmap <silent> f <cmd>HopChar1<CR>
 onoremap <silent> f v:HopChar1<CR>
 nmap <silent> <Leader>j :HopWord<CR>
 onoremap <silent> <Leader>j v:HopWord<CR>
@@ -396,14 +403,14 @@ autocmd BufWritePost * call defx#redraw()
 autocmd BufEnter * call s:browse()
 augroup END
 
-autocmd BufWinEnter quickfix nnoremap <silent> <buffer>
-                \   q :cclose<cr>:lclose<cr>
-autocmd BufEnter * if (winnr('$') == 1 && &buftype ==# 'quickfix' ) |
-                \   bd|
-                \   q | endif
+"autocmd BufWinEnter quickfix nnoremap <silent> <buffer>
+                "\   q :cclose<cr>:lclose<cr>
+"autocmd BufEnter * if (winnr('$') == 1 && &buftype ==# 'quickfix' ) |
+                "\   bd|
+                "\   q | endif
 
-map <C-e> :Defx -toggle -columns=git:indent:icons:filename:type:size:time <CR>
-map <leader>f :Defx `escape(expand('%:p:h'), ' :')` -search=`expand('%:p')`<CR>
+map <silent><C-e> :Defx -toggle -columns=git:indent:icons:filename:type:size:time <CR>
+map <silent><leader>f :Defx `escape(expand('%:p:h'), ' :')` -search=`expand('%:p')`<CR>
 
 " === Git blame === "
 nnoremap <Leader>s :<C-u>call gitblame#echo()<CR>
